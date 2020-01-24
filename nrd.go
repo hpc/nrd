@@ -48,10 +48,10 @@ func mcastJoin(*net.Interface, net.IP) {}
 func main() {
 
 	// parse flags
-	flag.BoolVar(&conf.bcast, "bcast", conf.bcast, "listen for broadcast instead of multicast")
+	//flag.BoolVar(&conf.bcast, "bcast", conf.bcast, "listen for broadcast instead of multicast")
 	flag.StringVar(&conf.ifaceName, "iface", conf.ifaceName, "interface to listen on")
 	flag.StringVar(&conf.cfgFile, "conf", conf.cfgFile, "configuration file to use")
-	flag.BoolVar(&conf.notify, "notify", conf.notify, "send sd_notify messages")
+	//flag.BoolVar(&conf.notify, "notify", conf.notify, "send sd_notify messages")
 	flag.BoolVar(&conf.up, "up", conf.up, "set startup state of routes to up")
 	flag.BoolVar(&conf.nojoin, "nojoin", conf.nojoin, "don't join multicast (assume it's already joined)")
 	lvl := flag.Uint("log", uint(conf.logLevel), "set the log level [0-4]")
@@ -125,9 +125,14 @@ func main() {
 
 	// join multicast group
 	if !conf.nojoin {
-		conn.JoinGroup(iface, &net.UDPAddr{IP: net.ParseIP(conf.mcastAddr)})
+		if err := conn.JoinGroup(iface, &net.UDPAddr{IP: net.ParseIP(conf.mcastAddr)}); err != nil {
+			l.FATAL("failed to join multicast group: %v", err)
+		}
 		defer conn.LeaveGroup(iface, &net.UDPAddr{IP: net.ParseIP(conf.mcastAddr)})
-		conn.SetControlMessage(ipv4.FlagDst, true)
+		if err := conn.SetControlMessage(ipv4.FlagDst, true); err != nil {
+			l.FATAL("failed to set message control: %v", err)
+		}
+		l.INFO("joined multicast group: %s", conf.mcastAddr)
 	}
 
 	// init packet decoder
