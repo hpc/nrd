@@ -2,32 +2,33 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
+	"golang.org/x/net/ipv4"
 	"gopkg.in/yaml.v2"
 )
 
 var l *logger
 
+const protocol = "ip4:89"
+
 // init config struct, set defaults
 var conf = &struct {
 	cfgFile, ifaceName, mcastAddr string
 	logLevel                      logLevel
-	mcast, notify, up             bool
+	bcast, notify, up, nojoin     bool
 }{
 	cfgFile:   "nrd.yml",
 	logLevel:  DEBUG,
 	ifaceName: "eth0",
-	mcast:     false,
+	bcast:     false,
 	notify:    false,
 	mcastAddr: "224.0.0.5",
 	up:        false,
+	nojoin:    false,
 }
 
 // format of config file
@@ -39,26 +40,34 @@ type cfgFile struct {
 
 var cfg = &cfgFile{}
 
+// FIXME: these are currently NOOPS
+func mcastJoin(*net.Interface, net.IP) {}
+
 func main() {
 
 	// parse flags
-	flag.BoolVar(&conf.mcast, "mcast", conf.mcast, "join multicast group")
+	flag.BoolVar(&conf.bcast, "bcast", conf.bcast, "listen for broadcast instead of multicast")
 	flag.StringVar(&conf.ifaceName, "iface", conf.ifaceName, "interface to listen on")
 	flag.StringVar(&conf.cfgFile, "conf", conf.cfgFile, "configuration file to use")
 	flag.BoolVar(&conf.notify, "notify", conf.notify, "send sd_notify messages")
 	flag.BoolVar(&conf.up, "up", conf.up, "set startup state of routes to up")
+	flag.BoolVar(&conf.nojoin, "nojoin", conf.nojoin, "don't join multicast (assume it's already joined)")
 	lvl := flag.Uint("log", uint(conf.logLevel), "set the log level [0-4]")
 	flag.Parse()
 	conf.logLevel = logLevel(*lvl)
 
+	if conf.bcast {
+		conf.nojoin = true
+	}
+
 	// create logger
 	l = NewLogger(os.Stdout, conf.logLevel)
-	l.INFO("Starting NRD")
+	l.INFO("starting NRD")
 
 	l.DEBUG("conf = %+v", *conf)
 
 	// read config
-	l.INFO("Reading config file at: %s", conf.cfgFile)
+	l.INFO("reading config file at: %s", conf.cfgFile)
 
 	data, err := ioutil.ReadFile(conf.cfgFile)
 	if err != nil {
@@ -80,12 +89,52 @@ func main() {
 		}
 	}
 
+	// get interface
+	iface, err := net.InterfaceByName(conf.ifaceName)
+	if err != nil {
+		l.FATAL("failed to find interface %s: %v", conf.ifaceName, err)
+	}
+	l.INFO("using interface %s", conf.ifaceName)
+
+	// get assicated ip addrs
+	// we select the first IPv4 addr
+	var ifaddr net.IP
+	ifaddrs, err := iface.Addrs()
+	if err != nil {
+		l.FATAL("couldn't get interface addrs: %v", err)
+	}
+	for _, a := range ifaddrs {
+		ip := a.(*net.IPNet).IP.To4()
+		if ip != nil {
+			ifaddr = ip
+			break
+		}
+	}
+	if ifaddr == nil {
+		l.FATAL("interface %s has no IPv4 addresses", conf.ifaceName)
+	}
+
 	// initialize packet listener
+	// FIXME: doesn't support broadcast
+	list, err := net.ListenPacket(protocol, conf.mcastAddr)
+	defer list.Close()
+
+	conn := ipv4.NewPacketConn(list)
 
 	// join multicast group
+	if !conf.nojoin {
+		conn.JoinGroup(iface, &net.UDPAddr{IP: net.ParseIP(conf.mcastAddr)})
+		defer conn.LeaveGroup(iface, &net.UDPAddr{IP: net.ParseIP(conf.mcastAddr)})
+		conn.SetControlMessage(ipv4.FlagDst, true)
+	}
+
+	// init packet decoder
+	var p layers.OSPFv2
+	parser := gopacket.NewDecodingLayerParser(layers.LayerTypeOSPF, &p)
+	decoded := []gopacket.LayerType{}
 
 	// main listener loop
 	for {
-
+		
 	}
 }
