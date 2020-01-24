@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"golang.org/x/net/ipv4"
 	"gopkg.in/yaml.v2"
 )
@@ -133,8 +135,38 @@ func main() {
 	parser := gopacket.NewDecodingLayerParser(layers.LayerTypeOSPF, &p)
 	decoded := []gopacket.LayerType{}
 
+	// make a buf the size of MTU
+	buf := make([]byte, iface.MTU)
+
 	// main listener loop
 	for {
-		
+		n, _, saddr, err := conn.ReadFrom(buf)
+		if err != nil {
+			// this shouldn't be a failure condition, but it is an error
+			l.ERROR("error decoding packet: %v", err)
+			continue
+		}
+		l.DEBUG("raw packet: %v", buf[:n])
+		if err := parser.DecodeLayers(buf[:n], &decoded); err != nil {
+			l.ERROR("error decoding packet: %v", err)
+			continue
+		}
+		for _, pack := range decoded {
+			if pack != layers.LayerTypeOSPF {
+				l.WARN("decoded non-OSPF packet")
+				continue
+			}
+			l.DEBUG("received OSPF type: %s", p.Type.String())
+			switch p.Type {
+			case layers.OSPFHello:
+				if r, ok := routers[saddr.(*net.IPAddr).IP.String()]; ok {
+					go r.Hello()
+				} else {
+					l.WARN("got HELLO from unknown router: %s", saddr.(*net.IPAddr).IP.String())
+				}
+			default:
+				l.DEBUG("unhandled OSPF type")
+			}
+		}
 	}
 }
