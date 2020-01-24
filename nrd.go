@@ -143,10 +143,10 @@ func main() {
 		n, _, saddr, err := conn.ReadFrom(buf)
 		if err != nil {
 			// this shouldn't be a failure condition, but it is an error
-			l.ERROR("error decoding packet: %v", err)
+			l.ERROR("error reading packet: %v", err)
 			continue
 		}
-		l.DEBUG("raw packet: %v", buf[:n])
+		l.DEBUG("raw packet: %x", buf[:n])
 		if err := parser.DecodeLayers(buf[:n], &decoded); err != nil {
 			l.ERROR("error decoding packet: %v", err)
 			continue
