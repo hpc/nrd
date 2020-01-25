@@ -111,7 +111,7 @@ func main() {
 
 	// create & populate router objects
 	for _, rip := range cfg.Routers {
-		routers[rip.String()] = NewRouter(rip, cfg.Routes, cfg.Dead, ifaddr)
+		routers[rip.String()] = NewRouter(rip, cfg.Routes, cfg.Dead)
 		l.INFO("added router %s", rip.String())
 		if conf.up {
 			routers[rip.String()].Up()

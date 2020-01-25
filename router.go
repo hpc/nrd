@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	scope  := netlink.SCOPE_LINK
-	metric := 0
+	metric = 0
 )
 
 var routers = map[string]*Router{}
@@ -28,7 +27,7 @@ type Router struct {
 }
 
 // NewRouter creates a new router.  New routers always start in down state
-func NewRouter(ip net.IP, routes []IPNet, dead time.Duration, lip net.IP) (r *Router) {
+func NewRouter(ip net.IP, routes []IPNet, dead time.Duration) (r *Router) {
 	iface, e := netlink.LinkByName(conf.ifaceName)
 	if e != nil {
 		l.FATAL("interface %v not found: %v", conf.ifaceName, e)
@@ -46,9 +45,8 @@ func NewRouter(ip net.IP, routes []IPNet, dead time.Duration, lip net.IP) (r *Ro
 		dst := net.IPNet(v)
 		route := netlink.Route{
 			LinkIndex: iface.Attrs().Index,
-			Src:       lip,
+			Gw:        r.ip,
 			Dst:       &dst,
-			Scope:     scope,
 			Priority:  metric,
 		}
 		r.rObj = append(r.rObj, route)
@@ -70,9 +68,9 @@ func (r *Router) Up() {
 	// set route
 	if !conf.dry {
 		for _, route := range r.rObj {
-			if e = netlink.RouteAdd(&route); e != nil {
-                log.Fatal("couldn't add route: ", e)
-            }
+			if err := netlink.RouteAdd(&route); err != nil {
+				l.ERROR("couldn't add route: %v", err)
+			}
 		}
 	} else {
 		l.DEBUG("dry run set, not adding route")
@@ -96,9 +94,9 @@ func (r *Router) Down() {
 	// unset route
 	if !conf.dry {
 		for _, route := range r.rObj {
-			if e = netlink.RouteDel(&route); e != nil {
-                log.Fatal("couldn't add route: ", e)
-            }
+			if err := netlink.RouteDel(&route); err != nil {
+				l.ERROR("couldn't add route: %v", err)
+			}
 		}
 	} else {
 		l.DEBUG("dry run set, not removing route")
@@ -126,10 +124,11 @@ func (r *Router) Hello() {
 	if r.up {
 		// just reset the timer
 		r.timer.Reset(r.dead)
+		r.Unlock()
 	} else {
 		// bring interface up
 		l.INFO("router returned to service %s", r.ip.String())
+		r.Unlock()
 		r.Up()
 	}
-	r.Unlock()
 }
