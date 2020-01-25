@@ -5,6 +5,12 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/vishvananda/netlink"
+)
+
+const (
+	scope = netlink.SCOPE_LINK
 )
 
 var routers = map[string]*Router{}
@@ -17,16 +23,33 @@ type Router struct {
 	dead   time.Duration
 	timer  *time.Timer
 	up     bool
+	rObj   []netlink.Route
 }
 
 // NewRouter creates a new router.  New routers always start in down state
-func NewRouter(ip net.IP, routes []IPNet, dead time.Duration) (r *Router) {
+func NewRouter(ip net.IP, routes []IPNet, dead time.Duration, iname string) (r *Router) {
+	iface, e := netlink.LinkByName(iname)
+	if e != nil {
+		l.FATAL("interface %v not found", iname)
+	}
+
 	r = &Router{
 		ip:     ip,
 		routes: routes,
 		dead:   dead,
 		timer:  &time.Timer{},
 		up:     false,
+		rObj:   []netlink.Route{},
+	}
+	for _, v := range r.routes {
+		dst := net.IPNet(v)
+		route := netlink.Route{
+			LinkIndex: iface.Attrs().Index,
+			Src:       ip,
+			Dst:       &dst,
+			Scope:     scope,
+		}
+		r.rObj = append(r.rObj, route)
 	}
 	return
 }
@@ -37,7 +60,10 @@ func (r *Router) Up() {
 	r.Lock()
 	r.up = true
 	r.timer = time.AfterFunc(r.dead, r.Dead)
-	// TODO: set route
+	// set route
+	for _, route := range r.rObj {
+		netlink.RouteAdd(&route)
+	}
 	r.Unlock()
 	c := atomic.AddInt32(&routersUp, 1)
 	l.INFO("there are %d routers up", c)
@@ -49,7 +75,10 @@ func (r *Router) Down() {
 	r.Lock()
 	r.timer.Stop()
 	r.up = false
-	// TODO: unset route
+	// unset route
+	for _, route := range r.rObj {
+		netlink.RouteDel(&route)
+	}
 	r.Unlock()
 	c := atomic.AddInt32(&routersUp, -1)
 	l.INFO("there are %d routers up", c)
