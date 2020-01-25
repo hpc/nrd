@@ -56,8 +56,13 @@ func NewRouter(ip net.IP, routes []IPNet, dead time.Duration, lip net.IP) (r *Ro
 
 // Up sets router up, starts dead timer
 func (r *Router) Up() {
-	l.INFO("router %s is now up", r.ip.String())
 	r.Lock()
+	if r.up == true {
+		// already up
+		l.DEBUG("router.Up called, but this route is already up")
+		return
+	}
+	l.INFO("router %s is now up", r.ip.String())
 	r.up = true
 	r.timer = time.AfterFunc(r.dead, r.Dead)
 	// set route
@@ -75,8 +80,13 @@ func (r *Router) Up() {
 
 // Down sets router down
 func (r *Router) Down() {
-	l.INFO("router %s is now down", r.ip.String())
 	r.Lock()
+	if r.up == false {
+		// already down
+		l.DEBUG("router.Down called, but this route is already down")
+		return
+	}
+	l.INFO("router %s is now down", r.ip.String())
 	r.timer.Stop()
 	r.up = false
 	// unset route
