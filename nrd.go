@@ -82,15 +82,6 @@ func main() {
 	l.DEBUG("cfgFile: %+v", *cfg)
 	// TODO: should probably do some sanity checking?
 
-	// create & populate router objects
-	for _, rip := range cfg.Routers {
-		routers[rip.String()] = NewRouter(rip, cfg.Routes, cfg.Dead)
-		l.INFO("added router %s", rip.String())
-		if conf.up {
-			routers[rip.String()].Up()
-		}
-	}
-
 	// get interface
 	iface, err := net.InterfaceByName(conf.ifaceName)
 	if err != nil {
@@ -114,6 +105,15 @@ func main() {
 	}
 	if ifaddr == nil {
 		l.FATAL("interface %s has no IPv4 addresses", conf.ifaceName)
+	}
+
+	// create & populate router objects
+	for _, rip := range cfg.Routers {
+		routers[rip.String()] = NewRouter(rip, cfg.Routes, cfg.Dead, ifaddr)
+		l.INFO("added router %s", rip.String())
+		if conf.up {
+			routers[rip.String()].Up()
+		}
 	}
 
 	// initialize packet listener
