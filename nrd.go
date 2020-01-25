@@ -24,7 +24,7 @@ var conf = &struct {
 	bcast, notify, up, nojoin, dry bool
 }{
 	cfgFile:   "nrd.yml",
-	logLevel:  DEBUG,
+	logLevel:  INFO,
 	ifaceName: "eth0",
 	bcast:     false,
 	notify:    false,
@@ -56,7 +56,7 @@ func main() {
 	flag.BoolVar(&conf.up, "up", conf.up, "set startup state of routes to up")
 	flag.BoolVar(&conf.nojoin, "nojoin", conf.nojoin, "don't join multicast (assume it's already joined)")
 	flag.BoolVar(&conf.dry, "dry", conf.dry, "dryrun, don't actually set routes")
-	lvl := flag.Uint("log", uint(conf.logLevel), "set the log level [0-4]")
+	lvl := flag.Uint("log", uint(conf.logLevel), "set the log level [0-3]")
 	flag.Parse()
 	conf.logLevel = logLevel(*lvl)
 
