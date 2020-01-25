@@ -109,9 +109,16 @@ func main() {
 		l.FATAL("interface %s has no IPv4 addresses", conf.ifaceName)
 	}
 
+	// create & populate route objects
+	for _, rn := range cfg.Routes {
+		n := net.IPNet(rn)
+		routes[n.String()] = NewRoute(&n)
+		l.INFO("managing route %s", n.String())
+	}
+
 	// create & populate router objects
 	for _, rip := range cfg.Routers {
-		routers[rip.String()] = NewRouter(rip, cfg.Routes, cfg.Dead)
+		routers[rip.String()] = NewRouter(rip, routes, cfg.Dead)
 		l.INFO("added router %s", rip.String())
 		if conf.up {
 			routers[rip.String()].Up()

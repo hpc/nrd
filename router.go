@@ -19,7 +19,7 @@ var routersUp int32 = 0
 type Router struct {
 	sync.Mutex
 	ip     net.IP
-	routes []IPNet
+	routes map[string]*Route
 	dead   time.Duration
 	timer  *time.Timer
 	up     bool
@@ -27,12 +27,7 @@ type Router struct {
 }
 
 // NewRouter creates a new router.  New routers always start in down state
-func NewRouter(ip net.IP, routes []IPNet, dead time.Duration) (r *Router) {
-	iface, e := netlink.LinkByName(conf.ifaceName)
-	if e != nil {
-		l.FATAL("interface %v not found: %v", conf.ifaceName, e)
-	}
-
+func NewRouter(ip net.IP, rs map[string]*Route, dead time.Duration) (r *Router) {
 	r = &Router{
 		ip:     ip,
 		routes: routes,
@@ -41,22 +36,13 @@ func NewRouter(ip net.IP, routes []IPNet, dead time.Duration) (r *Router) {
 		up:     false,
 		rObj:   []netlink.Route{},
 	}
-	for _, v := range r.routes {
-		dst := net.IPNet(v)
-		route := netlink.Route{
-			LinkIndex: iface.Attrs().Index,
-			Gw:        r.ip,
-			Dst:       &dst,
-			Priority:  metric,
-		}
-		r.rObj = append(r.rObj, route)
-	}
 	return
 }
 
 // Up sets router up, starts dead timer
 func (r *Router) Up() {
 	r.Lock()
+	defer r.Unlock()
 	if r.up == true {
 		// already up
 		l.DEBUG("router.Up called, but this route is already up")
@@ -67,15 +53,12 @@ func (r *Router) Up() {
 	r.timer = time.AfterFunc(r.dead, r.Dead)
 	// set route
 	if !conf.dry {
-		for _, route := range r.rObj {
-			if err := netlink.RouteAdd(&route); err != nil {
-				l.ERROR("couldn't add route: %v", err)
-			}
+		for _, route := range r.routes {
+			route.Add(r.ip)
 		}
 	} else {
 		l.DEBUG("dry run set, not adding route")
 	}
-	r.Unlock()
 	c := atomic.AddInt32(&routersUp, 1)
 	l.INFO("there are %d routers up", c)
 }
@@ -83,6 +66,7 @@ func (r *Router) Up() {
 // Down sets router down
 func (r *Router) Down() {
 	r.Lock()
+	defer r.Unlock()
 	if r.up == false {
 		// already down
 		l.DEBUG("router.Down called, but this route is already down")
@@ -93,15 +77,12 @@ func (r *Router) Down() {
 	r.up = false
 	// unset route
 	if !conf.dry {
-		for _, route := range r.rObj {
-			if err := netlink.RouteDel(&route); err != nil {
-				l.ERROR("couldn't add route: %v", err)
-			}
+		for _, route := range r.routes {
+			route.Del(r.ip)
 		}
 	} else {
 		l.DEBUG("dry run set, not removing route")
 	}
-	r.Unlock()
 	c := atomic.AddInt32(&routersUp, -1)
 	l.INFO("there are %d routers up", c)
 }
@@ -110,11 +91,6 @@ func (r *Router) Down() {
 func (r *Router) Dead() {
 	l.WARN("router %s hit dead state", r.ip.String())
 	r.Down()
-}
-
-// IsUp Checks if router is up
-func (r *Router) IsUp() bool {
-	return r.up // could technically be racey
 }
 
 // Hello reports a router hello
