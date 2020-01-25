@@ -27,10 +27,10 @@ type Router struct {
 }
 
 // NewRouter creates a new router.  New routers always start in down state
-func NewRouter(ip net.IP, routes []IPNet, dead time.Duration, iname string) (r *Router) {
-	iface, e := netlink.LinkByName(iname)
+func NewRouter(ip net.IP, routes []IPNet, dead time.Duration, lip net.IP) (r *Router) {
+	iface, e := netlink.LinkByName(conf.ifaceName)
 	if e != nil {
-		l.FATAL("interface %v not found", iname)
+		l.FATAL("interface %v not found: %v", conf.ifaceName, e)
 	}
 
 	r = &Router{
@@ -45,7 +45,7 @@ func NewRouter(ip net.IP, routes []IPNet, dead time.Duration, iname string) (r *
 		dst := net.IPNet(v)
 		route := netlink.Route{
 			LinkIndex: iface.Attrs().Index,
-			Src:       ip,
+			Src:       lip,
 			Dst:       &dst,
 			Scope:     scope,
 		}
