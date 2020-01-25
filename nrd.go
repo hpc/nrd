@@ -19,9 +19,9 @@ const protocol = "ip4:89"
 
 // init config struct, set defaults
 var conf = &struct {
-	cfgFile, ifaceName, mcastAddr string
-	logLevel                      logLevel
-	bcast, notify, up, nojoin     bool
+	cfgFile, ifaceName, mcastAddr  string
+	logLevel                       logLevel
+	bcast, notify, up, nojoin, dry bool
 }{
 	cfgFile:   "nrd.yml",
 	logLevel:  DEBUG,
@@ -31,6 +31,7 @@ var conf = &struct {
 	mcastAddr: "224.0.0.5",
 	up:        false,
 	nojoin:    false,
+	dry:       false,
 }
 
 // format of config file
@@ -54,6 +55,7 @@ func main() {
 	//flag.BoolVar(&conf.notify, "notify", conf.notify, "send sd_notify messages")
 	flag.BoolVar(&conf.up, "up", conf.up, "set startup state of routes to up")
 	flag.BoolVar(&conf.nojoin, "nojoin", conf.nojoin, "don't join multicast (assume it's already joined)")
+	flag.BoolVar(&conf.dry, "dry", conf.dry, "dryrun, don't actually set routes")
 	lvl := flag.Uint("log", uint(conf.logLevel), "set the log level [0-4]")
 	flag.Parse()
 	conf.logLevel = logLevel(*lvl)

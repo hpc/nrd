@@ -61,8 +61,12 @@ func (r *Router) Up() {
 	r.up = true
 	r.timer = time.AfterFunc(r.dead, r.Dead)
 	// set route
-	for _, route := range r.rObj {
-		netlink.RouteAdd(&route)
+	if !conf.dry {
+		for _, route := range r.rObj {
+			netlink.RouteAdd(&route)
+		}
+	} else {
+		l.DEBUG("dry run set, not adding route")
 	}
 	r.Unlock()
 	c := atomic.AddInt32(&routersUp, 1)
@@ -76,8 +80,12 @@ func (r *Router) Down() {
 	r.timer.Stop()
 	r.up = false
 	// unset route
-	for _, route := range r.rObj {
-		netlink.RouteDel(&route)
+	if !conf.dry {
+		for _, route := range r.rObj {
+			netlink.RouteDel(&route)
+		}
+	} else {
+		l.DEBUG("dry run set, not removing route")
 	}
 	r.Unlock()
 	c := atomic.AddInt32(&routersUp, -1)
