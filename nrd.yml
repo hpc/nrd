@@ -1,7 +1,10 @@
+# if we have not received a HELLO before "dead", we mark the router dead
 dead: "40s"
+# a list of network addresses that we route thruough routers
 routes:
     - 0.0.0.0/0
     - 192.168.0.0/255.255.255.0
+# a list of IP addresses of routers
 routers:
     - 10.0.1.100
     - 10.0.1.101

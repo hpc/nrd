@@ -43,9 +43,6 @@ type cfgFile struct {
 
 var cfg = &cfgFile{}
 
-// FIXME: these are currently NOOPS
-func mcastJoin(*net.Interface, net.IP) {}
-
 func main() {
 
 	// parse flags
