@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	scope = netlink.SCOPE_LINK
+	scope  := netlink.SCOPE_LINK
+	metric := 0
 )
 
 var routers = map[string]*Router{}
@@ -48,6 +49,7 @@ func NewRouter(ip net.IP, routes []IPNet, dead time.Duration, lip net.IP) (r *Ro
 			Src:       lip,
 			Dst:       &dst,
 			Scope:     scope,
+			Priority:  metric,
 		}
 		r.rObj = append(r.rObj, route)
 	}
@@ -68,7 +70,9 @@ func (r *Router) Up() {
 	// set route
 	if !conf.dry {
 		for _, route := range r.rObj {
-			netlink.RouteAdd(&route)
+			if e = netlink.RouteAdd(&route); e != nil {
+                log.Fatal("couldn't add route: ", e)
+            }
 		}
 	} else {
 		l.DEBUG("dry run set, not adding route")
@@ -92,7 +96,9 @@ func (r *Router) Down() {
 	// unset route
 	if !conf.dry {
 		for _, route := range r.rObj {
-			netlink.RouteDel(&route)
+			if e = netlink.RouteDel(&route); e != nil {
+                log.Fatal("couldn't add route: ", e)
+            }
 		}
 	} else {
 		l.DEBUG("dry run set, not removing route")
