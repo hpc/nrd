@@ -59,6 +59,11 @@ func main() {
 	l = NewLogger(os.Stdout, conf.logLevel)
 	l.INFO("starting NRD")
 
+	// check if root
+	if os.Geteuid() != 0 {
+		l.FATAL("must be run with root privelege")
+	}
+
 	l.DEBUG("conf = %+v", *conf)
 
 	// read config
