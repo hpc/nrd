@@ -153,7 +153,7 @@ func main() {
 		}
 		l.DEBUG("raw packet: %x", buf[:n])
 		if err := parser.DecodeLayers(buf[:n], &decoded); err != nil {
-			l.ERROR("error decoding packet: %v", err)
+			l.DEBUG("error decoding packet: %v", err)
 			continue
 		}
 		for _, pack := range decoded {
