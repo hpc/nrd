@@ -19,14 +19,13 @@ const protocol = "ip4:89"
 
 // init config struct, set defaults
 var conf = &struct {
-	cfgFile, ifaceName, mcastAddr  string
-	logLevel                       logLevel
-	bcast, notify, up, nojoin, dry bool
+	cfgFile, ifaceName, mcastAddr string
+	logLevel                      logLevel
+	notify, up, nojoin, dry       bool
 }{
 	cfgFile:   "nrd.yml",
 	logLevel:  INFO,
 	ifaceName: "eth0",
-	bcast:     false,
 	notify:    false,
 	mcastAddr: "224.0.0.5",
 	up:        false,
@@ -46,7 +45,6 @@ var cfg = &cfgFile{}
 func main() {
 
 	// parse flags
-	//flag.BoolVar(&conf.bcast, "bcast", conf.bcast, "listen for broadcast instead of multicast")
 	flag.StringVar(&conf.ifaceName, "iface", conf.ifaceName, "interface to listen on")
 	flag.StringVar(&conf.cfgFile, "conf", conf.cfgFile, "configuration file to use")
 	//flag.BoolVar(&conf.notify, "notify", conf.notify, "send sd_notify messages")
@@ -56,10 +54,6 @@ func main() {
 	lvl := flag.Uint("log", uint(conf.logLevel), "set the log level [0-3]")
 	flag.Parse()
 	conf.logLevel = logLevel(*lvl)
-
-	if conf.bcast {
-		conf.nojoin = true
-	}
 
 	// create logger
 	l = NewLogger(os.Stdout, conf.logLevel)
