@@ -47,7 +47,7 @@ func main() {
 	// parse flags
 	flag.StringVar(&conf.ifaceName, "iface", conf.ifaceName, "interface to listen on")
 	flag.StringVar(&conf.cfgFile, "conf", conf.cfgFile, "configuration file to use")
-	//flag.BoolVar(&conf.notify, "notify", conf.notify, "send sd_notify messages")
+	flag.BoolVar(&conf.notify, "notify", conf.notify, "send sd_notify messages")
 	flag.BoolVar(&conf.up, "up", conf.up, "set startup state of routes to up")
 	flag.BoolVar(&conf.nojoin, "nojoin", conf.nojoin, "don't join multicast (assume it's already joined)")
 	flag.BoolVar(&conf.dry, "dry", conf.dry, "dryrun, don't actually set routes")

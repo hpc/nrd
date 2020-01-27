@@ -5,11 +5,35 @@ package main
 import (
 	"net"
 	"sync"
+	"sync/atomic"
 
 	"github.com/vishvananda/netlink"
 )
 
 var routes = map[string]*Route{}
+
+// atomic counting of routes
+// this allows us to create hooks based on how many are active
+type routesCount int32
+
+func (rc *routesCount) Up() {
+	c := atomic.AddInt32((*int32)(rc), 1)
+	n := len(routes)
+	if conf.notify && !notifySent && int(c) == n {
+		l.INFO("routes have initialized, sending sd_notify")
+		// TODO: actually send sd_notify
+		notifySent = true
+	}
+	l.INFO("there are %d/%d routes up", c, n)
+}
+
+func (rc *routesCount) Down() {
+	c := atomic.AddInt32((*int32)(rc), -1)
+	l.INFO("there are %d/%d routes up", c, len(routes))
+}
+
+var notifySent bool = false
+var routesUp routesCount = 0
 
 type Route struct {
 	sync.Mutex
@@ -45,6 +69,7 @@ func (r *Route) update() {
 				return
 			}
 			r.up = false
+			routesUp.Down()
 			l.INFO("route %s is down", r.r.Dst.String())
 		} else {
 			if err := netlink.RouteReplace(r.r); err != nil {
@@ -60,6 +85,7 @@ func (r *Route) update() {
 			return
 		}
 		r.up = true
+		routesUp.Up()
 		l.INFO("route %s is down", r.r.Dst.String())
 	}
 }

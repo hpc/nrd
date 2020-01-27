@@ -14,7 +14,22 @@ const (
 )
 
 var routers = map[string]*Router{}
-var routersUp int32 = 0
+
+// atomic counting of routers
+// this allows us to create hooks based on how many are active
+type routerCount int32
+
+func (rc *routerCount) Up() {
+	c := atomic.AddInt32((*int32)(rc), 1)
+	l.INFO("there are %d/%d routers up", c, len(routers))
+}
+
+func (rc *routerCount) Down() {
+	c := atomic.AddInt32((*int32)(rc), -1)
+	l.INFO("there are %d/%d routers up", c, len(routers))
+}
+
+var routersUp routerCount = 0
 
 type Router struct {
 	sync.Mutex
@@ -59,8 +74,7 @@ func (r *Router) Up() {
 	} else {
 		l.DEBUG("dry run set, not adding route")
 	}
-	c := atomic.AddInt32(&routersUp, 1)
-	l.INFO("there are %d routers up", c)
+	routersUp.Up()
 }
 
 // Down sets router down
@@ -83,8 +97,7 @@ func (r *Router) Down() {
 	} else {
 		l.DEBUG("dry run set, not removing route")
 	}
-	c := atomic.AddInt32(&routersUp, -1)
-	l.INFO("there are %d routers up", c)
+	routersUp.Down()
 }
 
 // Dead sets router dead. This also calls Down
