@@ -7,7 +7,9 @@ import (
 
 // Logging
 const logPrefix = ""
-const logFlags = log.Ldate | log.Ltime
+
+//const logFlags = log.Ldate | log.Ltime
+const logFlags = 0
 
 type logLevel uint8
 

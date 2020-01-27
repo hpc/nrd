@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/coreos/go-systemd/daemon"
 	"github.com/vishvananda/netlink"
 )
 
@@ -21,8 +22,14 @@ func (rc *routesCount) Up() {
 	n := len(routes)
 	if conf.notify && !notifySent && int(c) == n {
 		l.INFO("routes have initialized, sending sd_notify")
-		// TODO: actually send sd_notify
-		notifySent = true
+		sent, err := daemon.SdNotify(false, daemon.SdNotifyReady)
+		if err != nil {
+			l.ERROR("failed to send sd_notify: %v", err)
+		} else if !sent {
+			l.WARN("notify was requested, but notification is not supported")
+		} else {
+			notifySent = true
+		}
 	}
 	l.INFO("there are %d/%d routes up", c, n)
 }
