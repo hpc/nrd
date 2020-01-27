@@ -1,0 +1,13 @@
+[Unit]
+Description=Neighborless Route Detection
+PartOf=network-online.target
+After=network.target NetworkManager.service
+Requires=network.target NetworkManager.service NetworkManager-want-online.service
+
+[Service]
+EnvironmentFile=/etc/sysconfig/nrd
+Type=notify
+ExecStart=/sbin/nrd -iface ${INTERFACE} -log ${LOGLEVEL} -notify -conf /etc/nrd.yml ${EXTRA_OPTS}
+
+[Install]
+WantedBy=network-online.target
