@@ -1,0 +1,4 @@
+# to be used by the nrd.service unit file
+INTERFACE=eth1
+LOGLEVEL=2
+EXTRA_OPTS=
