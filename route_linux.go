@@ -138,3 +138,11 @@ func (r *Route) Exists() bool {
 	}
 	return false
 }
+
+// Cleanup removes the route.  This is used on exit by default.
+func (r *Route) Cleanup() {
+	if err := netlink.RouteDel(r.r); err != nil {
+		l.ERROR("failed to delete route: %v", err)
+		return
+	}
+}

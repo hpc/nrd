@@ -1,3 +1,5 @@
+// +build linux
+
 package main
 
 import (
@@ -5,6 +7,8 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/google/gopacket"
@@ -19,9 +23,9 @@ const protocol = "ip4:89"
 
 // init config struct, set defaults
 var conf = &struct {
-	cfgFile, ifaceName, mcastAddr  string
-	logLevel                       logLevel
-	notify, up, nojoin, dry, force bool
+	cfgFile, ifaceName, mcastAddr           string
+	logLevel                                logLevel
+	notify, up, nojoin, dry, force, noclean bool
 }{
 	cfgFile:   "nrd.yml",
 	logLevel:  INFO,
@@ -32,6 +36,7 @@ var conf = &struct {
 	nojoin:    false,
 	dry:       false,
 	force:     false,
+	noclean:   false,
 }
 
 // format of config file
@@ -43,6 +48,25 @@ type cfgFile struct {
 
 var cfg = &cfgFile{}
 
+func sigHandle(c <-chan os.Signal) {
+	for {
+		switch s := <-c; s {
+		case syscall.SIGTERM:
+			fallthrough
+		case os.Interrupt:
+			if !conf.noclean {
+				l.INFO("exiting. cleaning up managed routes.")
+				for _, r := range routes {
+					r.Cleanup()
+				}
+			} else {
+				l.INFO("exiting. option noclean specified, leaving managed routes.")
+			}
+			os.Exit(0)
+		}
+	}
+}
+
 func main() {
 
 	// parse flags
@@ -53,6 +77,7 @@ func main() {
 	flag.BoolVar(&conf.nojoin, "nojoin", conf.nojoin, "don't join multicast (assume it's already joined)")
 	flag.BoolVar(&conf.dry, "dry", conf.dry, "dryrun, don't actually set routes")
 	flag.BoolVar(&conf.force, "force", conf.dry, "force nrd to control routes even if they already exist")
+	flag.BoolVar(&conf.noclean, "noclean", conf.noclean, "don't cleanup managed routes on exit")
 	lvl := flag.Uint("log", uint(conf.logLevel), "set the log level [0-3]")
 	flag.Parse()
 	conf.logLevel = logLevel(*lvl)
@@ -65,6 +90,11 @@ func main() {
 	if os.Geteuid() != 0 {
 		l.FATAL("must be run with root privelege")
 	}
+
+	// trap interrupts to perform cleanup on exit
+	sigChan := make(chan os.Signal)
+	go sigHandle(sigChan)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	l.DEBUG("conf = %+v", *conf)
 
