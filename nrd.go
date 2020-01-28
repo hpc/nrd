@@ -19,9 +19,9 @@ const protocol = "ip4:89"
 
 // init config struct, set defaults
 var conf = &struct {
-	cfgFile, ifaceName, mcastAddr string
-	logLevel                      logLevel
-	notify, up, nojoin, dry       bool
+	cfgFile, ifaceName, mcastAddr  string
+	logLevel                       logLevel
+	notify, up, nojoin, dry, force bool
 }{
 	cfgFile:   "nrd.yml",
 	logLevel:  INFO,
@@ -31,6 +31,7 @@ var conf = &struct {
 	up:        false,
 	nojoin:    false,
 	dry:       false,
+	force:     false,
 }
 
 // format of config file
@@ -51,6 +52,7 @@ func main() {
 	flag.BoolVar(&conf.up, "up", conf.up, "set startup state of routes to up")
 	flag.BoolVar(&conf.nojoin, "nojoin", conf.nojoin, "don't join multicast (assume it's already joined)")
 	flag.BoolVar(&conf.dry, "dry", conf.dry, "dryrun, don't actually set routes")
+	flag.BoolVar(&conf.force, "force", conf.dry, "force nrd to control routes even if they already exist")
 	lvl := flag.Uint("log", uint(conf.logLevel), "set the log level [0-3]")
 	flag.Parse()
 	conf.logLevel = logLevel(*lvl)
@@ -78,7 +80,6 @@ func main() {
 		l.FATAL("failed to parse config file: %v", err)
 	}
 	l.DEBUG("cfgFile: %+v", *cfg)
-	// TODO: should probably do some sanity checking?
 
 	// get interface
 	iface, err := net.InterfaceByName(conf.ifaceName)
@@ -108,7 +109,17 @@ func main() {
 	// create & populate route objects
 	for _, rn := range cfg.Routes {
 		n := net.IPNet(rn)
-		routes[n.String()] = NewRoute(&n)
+		nr := NewRoute(&n)
+		if nr.Exists() {
+			if conf.force {
+				nr.SetUp()
+				l.WARN("route %s exists but -force specified.  Route will be replaced.", n.String())
+			} else {
+				l.WARN("route %s exists, dropping from route list.  Use -force to take over existing routes.", n.String())
+				continue
+			}
+		}
+		routes[n.String()] = nr
 		l.INFO("managing route %s", n.String())
 	}
 
@@ -122,7 +133,6 @@ func main() {
 	}
 
 	// initialize packet listener
-	// FIXME: doesn't support broadcast
 	list, err := net.ListenPacket(protocol, conf.mcastAddr)
 	defer list.Close()
 
