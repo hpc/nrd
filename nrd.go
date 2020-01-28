@@ -27,7 +27,7 @@ var conf = &struct {
 	logLevel                                logLevel
 	notify, up, nojoin, dry, force, noclean bool
 }{
-	cfgFile:   "nrd.yml",
+	cfgFile:   "/etc/nrd.yml",
 	logLevel:  INFO,
 	ifaceName: "eth0",
 	notify:    false,

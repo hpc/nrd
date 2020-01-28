@@ -7,7 +7,7 @@ Requires=network.target NetworkManager.service NetworkManager-want-online.servic
 [Service]
 EnvironmentFile=/etc/sysconfig/nrd
 Type=notify
-ExecStart=/sbin/nrd -force -iface ${INTERFACE} -log ${LOGLEVEL} -notify -conf /etc/nrd.yml ${EXTRA_OPTS}
+ExecStart=/sbin/nrd -force -noclean -iface ${INTERFACE} -log ${LOGLEVEL} -notify ${EXTRA_OPTS}
 Restart=always
 
 [Install]
