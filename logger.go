@@ -13,6 +13,7 @@ const logFlags = 0
 
 type logLevel uint8
 
+// logging levels
 const (
 	ERROR logLevel = iota
 	WARN
@@ -33,6 +34,7 @@ type logger struct {
 	l   *log.Logger
 }
 
+// NewLogger returns an initialized logger
 func NewLogger(f *os.File, lvl logLevel) *logger {
 	return &logger{
 		lvl: lvl,

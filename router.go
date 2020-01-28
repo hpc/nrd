@@ -5,8 +5,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/vishvananda/netlink"
 )
 
 const (
@@ -31,6 +29,7 @@ func (rc *routerCount) Down() {
 
 var routersUp routerCount = 0
 
+// A Router represents a network router and is used to add/remove associated Routes when the state of a Router changes
 type Router struct {
 	sync.Mutex
 	ip     net.IP
@@ -38,7 +37,6 @@ type Router struct {
 	dead   time.Duration
 	timer  *time.Timer
 	up     bool
-	rObj   []netlink.Route
 }
 
 // NewRouter creates a new router.  New routers always start in down state
@@ -49,7 +47,6 @@ func NewRouter(ip net.IP, rs map[string]*Route, dead time.Duration) (r *Router) 
 		dead:   dead,
 		timer:  &time.Timer{},
 		up:     false,
-		rObj:   []netlink.Route{},
 	}
 	return
 }

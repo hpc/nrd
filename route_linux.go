@@ -1,6 +1,6 @@
-package main
-
 // +build linux
+
+package main
 
 import (
 	"net"
@@ -42,6 +42,7 @@ func (rc *routesCount) Down() {
 var notifySent bool = false
 var routesUp routesCount = 0
 
+// A Route represents a kernel route with one or more nexthops and is used to update kernel routes
 type Route struct {
 	sync.Mutex
 	r     *netlink.Route
@@ -49,6 +50,7 @@ type Route struct {
 	up    bool
 }
 
+// NewRoute returns an initialized Route object
 func NewRoute(dst *net.IPNet) (r *Route) {
 	r = &Route{
 		r: &netlink.Route{
@@ -97,6 +99,7 @@ func (r *Route) update() {
 	}
 }
 
+// Add adds a route to the route table
 func (r *Route) Add(gw net.IP) {
 	r.Lock()
 	defer r.Unlock()
@@ -106,6 +109,7 @@ func (r *Route) Add(gw net.IP) {
 	r.update()
 }
 
+// Del deletes a route from the route table
 func (r *Route) Del(gw net.IP) {
 	r.Lock()
 	defer r.Unlock()

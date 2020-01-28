@@ -10,6 +10,7 @@ import (
 // IPNet wraps net.IPNet this is used to unmarshal IPNets because net doesn't provide this function
 type IPNet net.IPNet
 
+// UnmarshalText decodes text of the form IP/MASK to an IPNET where MASK is either CIDR notation or dotted decimals
 func (i *IPNet) UnmarshalText(text []byte) error {
 	// split into net and mask
 	p := strings.Split(string(text), "/")
