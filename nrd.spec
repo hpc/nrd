@@ -41,6 +41,6 @@ install -D -m 0622 systemd/nrd.environment %{buildroot}/etc/sysconfig/nrd
 
 %changelog
 
-* Thu Dec 13 2018 J. Lowell Wofford <lowell@lanl.gov> 1.0-rc1
+* Wed Jan 29 2020 J. Lowell Wofford <lowell@lanl.gov> 1.0-rc1
 - Initial RPM build of nrd
 
