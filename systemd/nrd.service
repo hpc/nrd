@@ -1,8 +1,8 @@
 [Unit]
 Description=Neighborless Route Detection
 PartOf=network-online.target
-After=network.target ethcfg.service
-Requires=network.target ethcfg.service
+After=network.target ethcfg.service NetworkManager.service NetworkManager-wait-online.service
+Requires=network.target
 
 [Service]
 EnvironmentFile=/etc/sysconfig/nrd
