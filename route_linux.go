@@ -118,3 +118,31 @@ func (r *Route) Del(gw net.IP) {
 	}
 	r.update()
 }
+
+// SetUp forces the current state of the route to be up
+// This effectively forces a RouteReplace instead of a RouteAdd
+func (r *Route) SetUp() {
+	r.up = true
+}
+
+// Exists checks to see if this route already exists in the route table
+// It matches only on whether the Dst is the same as an existing route
+func (r *Route) Exists() bool {
+	match, err := netlink.RouteListFiltered(netlink.FAMILY_V4, r.r, netlink.RT_FILTER_DST)
+	if err != nil {
+		l.ERROR("error listing routes: %v", err)
+		return true
+	}
+	if len(match) > 0 {
+		return true
+	}
+	return false
+}
+
+// Cleanup removes the route.  This is used on exit by default.
+func (r *Route) Cleanup() {
+	if err := netlink.RouteDel(r.r); err != nil {
+		l.ERROR("failed to delete route: %v", err)
+		return
+	}
+}

@@ -1,3 +1,5 @@
+// +build linux
+
 package main
 
 import (
@@ -5,6 +7,8 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/google/gopacket"
@@ -19,11 +23,11 @@ const protocol = "ip4:89"
 
 // init config struct, set defaults
 var conf = &struct {
-	cfgFile, ifaceName, mcastAddr string
-	logLevel                      logLevel
-	notify, up, nojoin, dry       bool
+	cfgFile, ifaceName, mcastAddr           string
+	logLevel                                logLevel
+	notify, up, nojoin, dry, force, noclean bool
 }{
-	cfgFile:   "nrd.yml",
+	cfgFile:   "/etc/nrd.yml",
 	logLevel:  INFO,
 	ifaceName: "eth0",
 	notify:    false,
@@ -31,6 +35,8 @@ var conf = &struct {
 	up:        false,
 	nojoin:    false,
 	dry:       false,
+	force:     false,
+	noclean:   false,
 }
 
 // format of config file
@@ -42,6 +48,25 @@ type cfgFile struct {
 
 var cfg = &cfgFile{}
 
+func sigHandle(c <-chan os.Signal) {
+	for {
+		switch s := <-c; s {
+		case syscall.SIGTERM:
+			fallthrough
+		case os.Interrupt:
+			if !conf.noclean {
+				l.INFO("exiting. cleaning up managed routes.")
+				for _, r := range routes {
+					r.Cleanup()
+				}
+			} else {
+				l.INFO("exiting. option noclean specified, leaving managed routes.")
+			}
+			os.Exit(0)
+		}
+	}
+}
+
 func main() {
 
 	// parse flags
@@ -51,6 +76,8 @@ func main() {
 	flag.BoolVar(&conf.up, "up", conf.up, "set startup state of routes to up")
 	flag.BoolVar(&conf.nojoin, "nojoin", conf.nojoin, "don't join multicast (assume it's already joined)")
 	flag.BoolVar(&conf.dry, "dry", conf.dry, "dryrun, don't actually set routes")
+	flag.BoolVar(&conf.force, "force", conf.dry, "force nrd to control routes even if they already exist")
+	flag.BoolVar(&conf.noclean, "noclean", conf.noclean, "don't cleanup managed routes on exit")
 	lvl := flag.Uint("log", uint(conf.logLevel), "set the log level [0-3]")
 	flag.Parse()
 	conf.logLevel = logLevel(*lvl)
@@ -63,6 +90,11 @@ func main() {
 	if os.Geteuid() != 0 {
 		l.FATAL("must be run with root privelege")
 	}
+
+	// trap interrupts to perform cleanup on exit
+	sigChan := make(chan os.Signal)
+	go sigHandle(sigChan)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	l.DEBUG("conf = %+v", *conf)
 
@@ -78,7 +110,6 @@ func main() {
 		l.FATAL("failed to parse config file: %v", err)
 	}
 	l.DEBUG("cfgFile: %+v", *cfg)
-	// TODO: should probably do some sanity checking?
 
 	// get interface
 	iface, err := net.InterfaceByName(conf.ifaceName)
@@ -108,7 +139,17 @@ func main() {
 	// create & populate route objects
 	for _, rn := range cfg.Routes {
 		n := net.IPNet(rn)
-		routes[n.String()] = NewRoute(&n)
+		nr := NewRoute(&n)
+		if nr.Exists() {
+			if conf.force {
+				nr.SetUp()
+				l.WARN("route %s exists but -force specified.  Route will be replaced.", n.String())
+			} else {
+				l.WARN("route %s exists, dropping from route list.  Use -force to take over existing routes.", n.String())
+				continue
+			}
+		}
+		routes[n.String()] = nr
 		l.INFO("managing route %s", n.String())
 	}
 
@@ -122,7 +163,6 @@ func main() {
 	}
 
 	// initialize packet listener
-	// FIXME: doesn't support broadcast
 	list, err := net.ListenPacket(protocol, conf.mcastAddr)
 	defer list.Close()
 
