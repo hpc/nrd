@@ -8,6 +8,7 @@ URL:            https://gitlab.newmexicoconsortium.org/usrc/ngss/nrd
 Source0:        nrd-1.0rc1.tar.gz
 
 BuildRequires:  go, golang >= 1.13, golang-bin, golang-src
+Requires: ethcfg >= 2.1
 
 %description
 Pronounced "nord" (which is the French for north), nrd creates routes based on a simple static configuration and OSPF hello packets.
