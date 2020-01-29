@@ -1,6 +1,7 @@
 [Unit]
 Description=Neighborless Route Detection
 PartOf=network-online.target
+Before=network-online.target
 After=network.target ethcfg.service NetworkManager.service NetworkManager-wait-online.service
 Requires=network.target
 
