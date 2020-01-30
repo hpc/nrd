@@ -1,0 +1,93 @@
+.\" .TH NRD "8" "LANL HPC" "Jan 2020" "LANL HPC"
+.Dd January 30, 2020
+.Dt NRD 8
+.Dm test
+.Os
+.Sh NAME
+.Nm nrd
+.Nd Neighborless Route Detection 
+.Sh SYNOPSIS
+.Nm
+.Op Fl notify 
+.Op Fl up
+.Op Fl nojoin
+.Op Fl dry
+.Op Fl force
+.Op Fl noclean
+.Op Fl conf Ar path
+.Op Fl log Ar level
+.Op Fl version
+.Op Fl help
+
+.Sh DESCRIPTION
+NRD  can  manage  ECMP/MultiPath routes on a network by listening to OSPF hello packets.
+.Pp
+.Bl -tag -width indent
+.It Ic -conf Ar path
+configuration file to use
+.It Ic -log Ar level
+set the log level [0-3]
+.It Ic -notify   
+send sd_notify messages
+.It Ic -nojoin
+don't join multicast (assume it's already joined)
+.It Ic -noclean
+don't cleanup managed routes on exit
+.It Ic -version
+output version information and exit
+.It Ic -dry
+dryrun, don't actually set routes
+.It Ic -up       
+set startup state of routes to up
+.It Ic -force
+force
+.Nm
+to control routes even if they already exist
+.It Ic -help
+display help and exit
+
+.Sh EXAMPLES
+.nf
+.RS
+\& [vagrant@leaf1 ~]$ sudo ./nrd -iface eth1 -log 2
+\& 2020/01/25 04:30:26 INFO:starting NRD
+\& 2020/01/25 04:30:26 INFO:reading config file at: nrd.yml
+\& 2020/01/25 04:30:26 INFO:using interface eth1
+\& 2020/01/25 04:30:26 INFO:managing route 192.168.57.0/24
+\& 2020/01/25 04:30:26 INFO:added router 192.168.56.10
+\& 2020/01/25 04:30:26 INFO:added router 192.168.56.11
+\& 2020/01/25 04:30:26 INFO:joined multicast group: 224.0.0.5
+\& 2020/01/25 04:30:32 INFO:router returned to service 192.168.56.10
+\& 2020/01/25 04:30:32 INFO:router 192.168.56.10 is now up
+\& 2020/01/25 04:30:32 INFO:route 192.168.57.0/24 is down
+\& 2020/01/25 04:30:32 INFO:there are 1 routers up
+\& 2020/01/25 04:30:32 INFO:router returned to service 192.168.56.11
+\& 2020/01/25 04:30:32 INFO:router 192.168.56.11 is now up
+\& 2020/01/25 04:30:32 INFO:updated route 192.168.57.0/24
+\& 2020/01/25 04:30:32 INFO:there are 2 routers up
+.RE
+.fi
+
+.Sh AUTHOR
+Written by J. Lowell Wofford and Brett Holman.
+
+.Sh "REPORTING BUGS"
+.br
+Please report bugs on the 
+.Nm
+home page: <http://www.github.org/tbd/>
+
+.Sh COPYRIGHT
+Copyright \(co 2018, Triad National Security, LLC 
+.br
+License BSD-3
+.br
+This is open source software; you can redistribute it and/or modify it under the
+.br
+terms of the License. If software is modified to produce derivative works, such
+.br
+modified software should be clearly marked, so as not to confuse it with the
+.br
+version available from LANL. Full text of the License can be found in the LICENSE
+.br
+file in the main development branch of the repository.
