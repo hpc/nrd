@@ -13,6 +13,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -27,6 +28,8 @@ import (
 )
 
 var l *logger
+
+const version = "1.0rc1"
 
 const protocol = "ip4:89"
 
@@ -87,9 +90,23 @@ func main() {
 	flag.BoolVar(&conf.dry, "dry", conf.dry, "dryrun, don't actually set routes")
 	flag.BoolVar(&conf.force, "force", conf.dry, "force nrd to control routes even if they already exist")
 	flag.BoolVar(&conf.noclean, "noclean", conf.noclean, "don't cleanup managed routes on exit")
+	pVersion := flag.Bool("version", false, "output version information and exit")
 	lvl := flag.Uint("log", uint(conf.logLevel), "set the log level [0-3]")
 	flag.Parse()
 	conf.logLevel = logLevel(*lvl)
+
+	if *pVersion {
+		fmt.Printf(`
+nrd %s
+
+This software is open source software available under the BSD-3 license.
+Copyright (c) 2018, Triad National Security, LLC
+See LICENSE file for details.
+
+Written by J. Lowell Wofford and Brett Holman.
+`, version)
+		os.Exit(0)
+	}
 
 	// create logger
 	l = NewLogger(os.Stdout, conf.logLevel)
