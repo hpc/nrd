@@ -19,24 +19,24 @@ This is intended to be run on HPC nodes to auto-configure their routes to be loa
 
 %build
 go build .
+gzip nrd.8
 
 
 %install
 mkdir -p %{buildroot}
 install -D -s -m 0755 nrd %{buildroot}/sbin/nrd
-install -D -m 0622 nrd.yml %{buildroot}/etc/nrd.yml
-#install -m 0622 nrd.8.gz %{buildroot}/usr/share/man/man8/
-install -m 0622 LICENSE %{buildroot}/usr/share/licenses/
-install -D -m 0622 systemd/nrd.service %{buildroot}/usr/lib/systemd/system/nrd.service
-install -D -m 0622 systemd/nrd.environment %{buildroot}/etc/sysconfig/nrd
+install -D -m 0644 nrd.yml %{buildroot}/etc/nrd.yml
+install -D -m 0644 nrd.8.gz %{buildroot}/usr/share/man/man8/nrd.8.gz
+install -D -m 0644 systemd/nrd.service %{buildroot}/usr/lib/systemd/system/nrd.service
+install -D -m 0644 systemd/nrd.environment %{buildroot}/etc/sysconfig/nrd
 
 %files
-%defattr(-,root,root,-)
-%doc LICENSE
+%defattr(-,root,root)
+%license LICENSE
+%doc /usr/share/man/man8/nrd.8.gz
 /sbin/nrd
-%config /etc/nrd.yml
-%config /etc/sysconfig/nrd
-#%config /etc/systemd/system/nrd.service
+%config(noreplace) /etc/nrd.yml
+%config(noreplace) /etc/sysconfig/nrd
 /usr/lib/systemd/system/nrd.service
 
 %changelog
