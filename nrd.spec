@@ -26,13 +26,13 @@ mkdir -p %{buildroot}
 install -D -s -m 0755 nrd %{buildroot}/sbin/nrd
 install -D -m 0622 nrd.yml %{buildroot}/etc/nrd.yml
 #install -m 0622 nrd.8.gz %{buildroot}/usr/share/man/man8/
-#install -m 0622 LICENSE %{buildroot}/usr/share/licenses/
+install -m 0622 LICENSE %{buildroot}/usr/share/licenses/
 install -D -m 0622 systemd/nrd.service %{buildroot}/usr/lib/systemd/system/nrd.service
 install -D -m 0622 systemd/nrd.environment %{buildroot}/etc/sysconfig/nrd
 
 %files
 %defattr(-,root,root,-)
-#%doc LICENSE
+%doc LICENSE
 /sbin/nrd
 %config /etc/nrd.yml
 %config /etc/sysconfig/nrd
