@@ -8,7 +8,7 @@ Requires=network.target
 [Service]
 EnvironmentFile=/etc/sysconfig/nrd
 Type=notify
-ExecStart=/sbin/nrd -force -noclean -iface ${INTERFACE} -log ${LOGLEVEL} -notify ${EXTRA_OPTS}
+ExecStart=/usr/sbin/nrd -force -noclean -iface ${INTERFACE} -log ${LOGLEVEL} -notify ${EXTRA_OPTS}
 Restart=always
 
 [Install]
