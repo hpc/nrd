@@ -2,10 +2,10 @@ Name:           nrd
 Version:        1.0
 Release:        rc1%{?dist}
 Summary:        nrd dynamically manages ECMP/MultiPath routes by listening for OSPF Hello packets
-
+Group:          Applications/System
 License:        BSD-3
 URL:            https://gitlab.newmexicoconsortium.org/usrc/ngss/nrd
-Source0:        nrd-1.0rc1.tar.gz
+Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  go, golang >= 1.13, golang-bin, golang-src
 Requires: ethcfg >= 2.1
@@ -24,20 +24,20 @@ gzip nrd.8
 
 %install
 mkdir -p %{buildroot}
-install -D -s -m 0755 nrd %{buildroot}/sbin/nrd
-install -D -m 0644 nrd.yml %{buildroot}/etc/nrd.yml
-install -D -m 0644 nrd.8.gz %{buildroot}/usr/share/man/man8/nrd.8.gz
-install -D -m 0644 systemd/nrd.service %{buildroot}/usr/lib/systemd/system/nrd.service
-install -D -m 0644 systemd/nrd.environment %{buildroot}/etc/sysconfig/nrd
+install -D -s -m 0755 nrd %{buildroot}%{_sbindir}/nrd
+install -D -m 0644 nrd.yml %{buildroot}%{_sysconfdir}/nrd.yml
+install -D -m 0644 nrd.8.gz %{buildroot}%{_mandir}/man8/nrd.8.gz
+install -D -m 0644 systemd/nrd.service %{buildroot}%{_unitdir}/nrd.service
+install -D -m 0644 systemd/nrd.environment %{buildroot}%{_sysconfdir}/sysconfig/nrd
 
 %files
 %defattr(-,root,root)
 %license LICENSE
-%doc /usr/share/man/man8/nrd.8.gz
-/sbin/nrd
-%config(noreplace) /etc/nrd.yml
-%config(noreplace) /etc/sysconfig/nrd
-/usr/lib/systemd/system/nrd.service
+%doc %{_mandir}/man8/nrd.8.gz
+%{_sbindir}/nrd
+%config(noreplace) %{_sysconfdir}/nrd.yml
+%config(noreplace) %{_sysconfdir}/sysconfig/nrd
+%{_unitdir}/nrd.service
 
 %changelog
 
