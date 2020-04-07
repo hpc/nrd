@@ -1,6 +1,6 @@
 Name:           nrd
 Version:        1.0
-Release:        rc1%{?dist}
+Release:        %{?dist}
 Summary:        nrd dynamically manages ECMP/MultiPath routes by listening for OSPF Hello packets
 Group:          Applications/System
 License:        BSD-3
@@ -41,6 +41,8 @@ install -D -m 0644 systemd/nrd.environment %{buildroot}%{_sysconfdir}/sysconfig/
 
 %changelog
 
+* Tue Apr 07 2020 J. Lowell Wofford <lowell@lanl.gov> 1.0
+- Rev to 1.0
 * Wed Jan 29 2020 J. Lowell Wofford <lowell@lanl.gov> 1.0-rc1
 - Initial RPM build of nrd
 
