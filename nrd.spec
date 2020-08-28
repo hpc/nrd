@@ -1,6 +1,6 @@
 Name:           nrd
 Version:        1.0
-Release:        %{?dist}
+Release:        1%{?dist}
 Summary:        nrd dynamically manages ECMP/MultiPath routes by listening for OSPF Hello packets
 Group:          Applications/System
 License:        BSD-3
@@ -9,6 +9,8 @@ Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  go, golang >= 1.13, golang-bin, golang-src
 Requires: ethcfg >= 2.1
+
+%define  debug_package %{nil}
 
 %description
 Pronounced "nord" (which is the French for north), nrd creates routes based on a simple static configuration and OSPF hello packets.
@@ -41,8 +43,9 @@ install -D -m 0644 systemd/nrd.environment %{buildroot}%{_sysconfdir}/sysconfig/
 
 %changelog
 
-* Tue Apr 07 2020 J. Lowell Wofford <lowell@lanl.gov> 1.0
+* Fri Aug 28 2020 J. Lowell Wofford <lowell@lanl.gov> 1.0-1
+- Disable debug_package since the debuginfo build fails on RHEL8/CentOS8.
+* Tue Apr 07 2020 J. Lowell Wofford <lowell@lanl.gov> 1.0-0
 - Rev to 1.0
 * Wed Jan 29 2020 J. Lowell Wofford <lowell@lanl.gov> 1.0-rc1
 - Initial RPM build of nrd
-
