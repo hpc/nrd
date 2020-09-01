@@ -7,7 +7,7 @@ License:        BSD-3
 URL:            https://gitlab.newmexicoconsortium.org/usrc/ngss/nrd
 Source0:        %{name}-%{version}.tar.gz
 
-BuildRequires:  go, golang >= 1.13, golang-bin, golang-src
+BuildRequires:  go, golang >= 1.12, golang-bin, golang-src
 Requires: ethcfg >= 2.1
 
 %define  debug_package %{nil}
