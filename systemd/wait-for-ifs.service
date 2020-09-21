@@ -1,0 +1,15 @@
+[Unit]
+Description=Wait for network interfaces
+PartOf=network-online.target
+Before=network-online.target nrd.service
+After=network.target
+Requires=network.target
+
+[Service]
+EnvironmentFile=/etc/sysconfig/wait-for-ifs
+Type=oneshot
+ExecStart=/usr/libexec/wait-for-ifs $IFS
+RemainAfterExit=yes
+
+[Install]
+WantedBy=network-online.target

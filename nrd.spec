@@ -31,6 +31,9 @@ install -D -m 0644 nrd.yml %{buildroot}%{_sysconfdir}/nrd.yml
 install -D -m 0644 nrd.8.gz %{buildroot}%{_mandir}/man8/nrd.8.gz
 install -D -m 0644 systemd/nrd.service %{buildroot}%{_unitdir}/nrd.service
 install -D -m 0644 systemd/nrd.environment %{buildroot}%{_sysconfdir}/sysconfig/nrd
+install -D -m 0755 wait-for-ifs.py %{buildroot}%{_libexecdir}/wait-for-ifs
+install -D -m 0644 systemd/wait-for-ifs.service %{buildroot}%{_unitdir}/wait-for-ifs.service
+install -D -m 0644 systemd/wait-for-ifs.environment %{buildroot}%{_sysconfdir}/sysconfig/wait-for-ifs
 
 %files
 %defattr(-,root,root)
@@ -40,9 +43,14 @@ install -D -m 0644 systemd/nrd.environment %{buildroot}%{_sysconfdir}/sysconfig/
 %config(noreplace) %{_sysconfdir}/nrd.yml
 %config(noreplace) %{_sysconfdir}/sysconfig/nrd
 %{_unitdir}/nrd.service
+%{_libexecdir}/wait-for-ifs
+%{_unitdir}/wait-for-fs.service
+%config(noreplace) %{_sysconfdir}/sysconfig/wait-for-ifs
 
 %changelog
 
+* Mon Sep 21 2020 J. Lowell Wofford <lowell@lanl.gov> 1.0-2
+- Add wait-for-ifs script/service
 * Fri Aug 28 2020 J. Lowell Wofford <lowell@lanl.gov> 1.0-1
 - Disable debug_package since the debuginfo build fails on RHEL8/CentOS8.
 * Tue Apr 07 2020 J. Lowell Wofford <lowell@lanl.gov> 1.0-0
