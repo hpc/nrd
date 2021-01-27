@@ -44,7 +44,7 @@ install -D -m 0644 systemd/wait-for-ifs.environment %{buildroot}%{_sysconfdir}/s
 %config(noreplace) %{_sysconfdir}/sysconfig/nrd
 %{_unitdir}/nrd.service
 %{_libexecdir}/wait-for-ifs
-%{_unitdir}/wait-for-fs.service
+%{_unitdir}/wait-for-ifs.service
 %config(noreplace) %{_sysconfdir}/sysconfig/wait-for-ifs
 
 %changelog
