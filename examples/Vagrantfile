@@ -1,0 +1,70 @@
+# router + nrd managed node
+
+$build_node = <<EOF
+sudo -i
+dnf -y update
+dnf -y install git vim tcpdump rpm-build golang
+
+# build & install rpm
+git clone https://github.com/hpc/nrd.git nrd-1.0
+tar czvf nrd-1.0.tar.gz nrd-1.0/
+mkdir -p $HOME/rpmbuild/{SPECS,SOURCES}
+cp nrd-1.0.tar.gz $HOME/rpmbuild/SOURCES/
+cp nrd-1.0/nrd.spec $HOME/rpmbuild/SPECS/
+rpmbuild -ba $HOME/rpmbuild/SPECS/nrd.spec
+dnf -y localinstall $HOME/rpmbuild/RPMS/x86_64/nrd-1.0-1.el8.x86_64.rpm
+
+# bootstrap nrd configs
+sed -i 's|192.168.0.0|192.168.10.0|' /etc/nrd.yml
+sed -i 's|10.0.1.100|192.168.10.254|' /etc/nrd.yml
+sed -i 's|    - 10.0.1.101||' /etc/nrd.yml
+EOF
+
+$build_router = <<EOF
+sudo -i
+dnf -y update
+dnf -y install frr git vim tcpdump
+
+# configure router
+sed -i -e 's/zebra=no/zebra=yes/g' -e 's/ospfd=no/ospfd=yes/g' /etc/frr/daemons
+systemctl enable frr --now
+vtysh -c 'conf t' -c 'router ospf' -c 'network 192.168.10.0/24 area 0.0.0.0'
+EOF
+
+Vagrant.configure("2") do |config|
+	boxes = {
+		'router' => {
+			'image' => 'centos/8',
+			'script' => $build_router,
+			'hostname' => 'router1',
+			'ip' => '192.168.10.254'
+		},
+		'node' => {
+			'image' => 'centos/8',
+			'script' => $build_node,
+			'hostname' => 'node1',
+			'ip' => '192.168.10.1'
+		}
+	}
+	boxes.each do | name, params |
+		config.vm.define name do |box|
+			box.vm.box = params['image']
+			box.vm.hostname = params['hostname']
+			box.vm.network :private_network, ip: params['ip']
+			box.vm.provider "virtualbox" do |vb|
+				vb.customize ["modifyvm", :id, "--cpus", "2", "--paravirtprovider", "kvm", "--ioapic", "on"]
+			vb.memory = 2048
+			end
+			box.vm.provider :libvirt do |v|
+				v.memory = 2048
+				v.cpus = 2
+			end
+			box.vm.provision "shell", inline: params['script']
+			if Vagrant.has_plugin?("vagrant-proxyconf")
+				box.proxy.http     = ENV["http_proxy"]
+				box.proxy.https    = ENV["https_proxy"]
+				box.proxy.no_proxy = ENV["no_proxy"]
+			end
+		end
+	end
+end
