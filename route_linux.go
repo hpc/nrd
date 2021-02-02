@@ -28,7 +28,15 @@ type routesCount int32
 func (rc *routesCount) Up() {
 	c := atomic.AddInt32((*int32)(rc), 1)
 	n := len(routes)
-	if conf.notify && !notifySent && int(c) == n {
+	if int(c) == n {
+		notify()
+	}
+	l.INFO("there are %d/%d routes up", c, n)
+}
+
+
+func notify() {
+	if conf.notify && !notifySent {
 		l.INFO("routes have initialized, sending sd_notify")
 		sent, err := daemon.SdNotify(false, daemon.SdNotifyReady)
 		if err != nil {
@@ -39,7 +47,6 @@ func (rc *routesCount) Up() {
 			notifySent = true
 		}
 	}
-	l.INFO("there are %d/%d routes up", c, n)
 }
 
 func (rc *routesCount) Down() {
@@ -93,6 +100,7 @@ func (r *Route) update() {
 				l.ERROR("failed to update route: %v", err)
 				return
 			}
+			notify()
 			l.INFO("updated route %s", r.r.Dst.String())
 		}
 	} else if len(nh) > 0 {
